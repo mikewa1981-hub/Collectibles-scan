@@ -1,0 +1,52 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      # The app shows the same page that GitHub Pages serves.
+      - name: Copy the scanner page into the app
+        run: |
+          mkdir -p app/src/main/assets
+          cp index.html app/src/main/assets/index.html
+
+      - name: Build
+        run: gradle assembleDebug --no-daemon
+
+      - name: Rename APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk MinifigScanner.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MinifigScanner
+          path: MinifigScanner.apk
+
+      - name: Publish as the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          sleep 5
+          gh release create latest MinifigScanner.apk \
+            --target "$GITHUB_SHA" \
+            --title "Minifig Scanner (Build ${GITHUB_RUN_NUMBER})" \
+            --notes "APK herunterladen und am Handy öffnen, um die App zu installieren."

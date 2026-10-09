@@ -300,6 +300,13 @@ async function tick() {
 }
 startLive();
 
+// ---- installed Android app: the phone's own code scanner reads the code
+if (window.Android) {
+  $('scanBtn').addEventListener('click', e => { e.preventDefault(); window.Android.scan(); });
+  window.onNativeScan = t => { if (!t || !handleTexts([t])) showMsg('Kein Code erkannt', 'Bitte noch einmal scannen.', true); };
+  window.onNativeScanError = m => showMsg('Scanner nicht bereit', 'Der Code-Scanner von Google Play wird beim ersten Start nachgeladen. Kurz warten und noch einmal versuchen.' + (m ? ' (' + m + ')' : ''), true);
+}
+
 // ---- manual entry
 $('manual').addEventListener('submit', e => {
   e.preventDefault();

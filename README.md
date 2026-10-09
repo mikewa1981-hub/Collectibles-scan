@@ -10,6 +10,13 @@ Scannt den Data-Matrix-Code auf der Unterseite von LEGO-Minifiguren-Schachteln (
 
 Über HTTPS startet der Live-Scan automatisch: Code in den Rahmen halten, die Figur erscheint ohne Auslösen.
 
+## Als APK installieren
+
+Bei jedem Push baut GitHub Actions eine APK und legt sie unter **Releases → latest** ab:
+<https://github.com/mikewa1981-hub/Collectibles-scan/releases/latest/download/MinifigScanner.apk>
+
+Am Handy herunterladen, öffnen und die Installation aus dieser Quelle einmal erlauben. Die APK ist mit dem Test-Schlüssel `app/debug.keystore` signiert und nicht für den Play Store gedacht. In der App liest der Google-Code-Scanner des Handys den Code.
+
 ## Quellen
 
 Code-Listen und Figurenbilder stammen aus [L-Scan](https://github.com/le0pard/lego-scanner) (MIT-Lizenz, siehe `THIRD_PARTY_LICENSE_L-Scan.txt`). Die Codes kommen aus der Sammler-Community und sind nicht von LEGO bestätigt. Inoffizielles Werkzeug ohne Verbindung zur LEGO Gruppe.
