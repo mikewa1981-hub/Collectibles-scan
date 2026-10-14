@@ -57,6 +57,17 @@ header span { color: var(--muted); font-size: 0.8rem; }
 .live i { position: absolute; inset: 25%; border: 3px solid var(--brick); border-radius: 12px; box-shadow: 0 0 0 100vmax rgba(0,0,0,.35); pointer-events: none; }
 .live small { position: absolute; left: 0; right: 0; bottom: 10px; text-align: center; color: #fff; font-size: 0.82rem; }
 
+/* Collection verdict: thick red = already owned, thick green = still missing */
+.stage.own { border: 6px solid var(--warn); }
+.stage.need { border: 6px solid var(--good); }
+.verdict { font-weight: 700; font-size: 1.05rem; padding: 6px 14px; border-radius: 999px; color: #fff; }
+.own .verdict { background: var(--warn); }
+.need .verdict { background: var(--good); }
+.toggle { min-height: 44px; padding: 0 18px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: 500 0.95rem var(--font); cursor: pointer; }
+.grid figure { cursor: pointer; position: relative; }
+.grid figure:not(.have) img { opacity: .4; }
+.grid figure.have::after { content: "✓"; position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: var(--good); color: #fff; font-size: 14px; line-height: 22px; font-weight: 700; }
+.gridhint { color: var(--muted); font-size: 0.8rem; margin: 0 0 6px; }
 .result { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
 .result img { width: min(100%, 300px); aspect-ratio: 1; object-fit: contain; background: #fff; border-radius: 12px; }
 .result h2 { margin: 0; font-size: 1.7rem; line-height: 1.15; font-weight: 700; text-wrap: balance; }
@@ -167,7 +178,6 @@ const src = f => 'data:image/webp;base64,' + f.i;
 const BY_CODE = new Map();
 let total = 0;
 SERIES.forEach(s => s.f.forEach(f => { total++; f.c.forEach(c => BY_CODE.set(c, { fig: f, ser: s })); }));
-$('count').textContent = total + ' Figuren · ' + SERIES.length + ' Serien';
 
 // A box code reads like "6634901 245S6 13916839 000341": the first number names the figure.
 function lookup(text) {
@@ -184,16 +194,57 @@ function show(node) {
   const out = $('out'); out.hidden = false; out.replaceChildren(node);
   if (!liveOn) $('live').hidden = true;
 }
-function showFigure(hit, raw, remember) {
+// ---- my collection: figure keys (first code) kept in the app, or in the browser on the web
+const store = {
+  load() {
+    try { return JSON.parse(window.Android && Android.loadCollection ? Android.loadCollection() : (localStorage.getItem('owned') || '[]')); }
+    catch (e) { return []; }
+  },
+  save(list) {
+    const j = JSON.stringify(list);
+    try { if (window.Android && Android.saveCollection) Android.saveCollection(j); else localStorage.setItem('owned', j); } catch (e) {}
+  }
+};
+const owned = new Set(store.load().filter(k => BY_CODE.has(k)));
+const keyOf = fig => fig.c[0];
+function updateCount() {
+  $('count').textContent = owned.size + ' von ' + total + ' in Sammlung';
+  document.querySelectorAll('[data-key]').forEach(n => n.classList.toggle('have', owned.has(n.dataset.key)));
+  document.querySelectorAll('[data-series]').forEach(n => {
+    const s = SERIES[+n.dataset.series];
+    n.textContent = s.f.filter(f => owned.has(keyOf(f))).length + '/' + s.f.length + ' · ' + s.set;
+  });
+}
+function toggleOwned(fig) {
+  const k = keyOf(fig);
+  owned.has(k) ? owned.delete(k) : owned.add(k);
+  store.save([...owned]);
+  updateCount();
+  if (current && current.hit.fig === fig) showFigure(current.hit, current.raw, false, true);
+}
+
+let current = null;
+function showFigure(hit, raw, remember, quiet) {
+  current = { hit, raw };
+  const have = owned.has(keyOf(hit.fig));
   const d = el('div', 'result pop');
   const img = el('img'); img.src = src(hit.fig); img.alt = hit.fig.n;
-  d.append(img, el('h2', '', hit.fig.n), el('div', 'series', hit.ser.s + ' · Set ' + hit.ser.set));
+  const t = el('button', 'toggle', have ? 'Aus Sammlung entfernen' : 'Zur Sammlung hinzufügen');
+  t.type = 'button';
+  t.addEventListener('click', () => toggleOwned(hit.fig));
+  d.append(el('div', 'verdict', have ? 'Schon in deiner Sammlung' : 'Fehlt noch – neu für dich'),
+    img, el('h2', '', hit.fig.n), el('div', 'series', hit.ser.s + ' · Set ' + hit.ser.set));
   if (raw) d.append(el('div', 'code', raw));
+  d.append(t);
   show(d);
-  try { navigator.vibrate && navigator.vibrate(60); } catch (e) {}
+  $('stage').classList.toggle('own', have);
+  $('stage').classList.toggle('need', !have);
+  if (!quiet) try { navigator.vibrate && navigator.vibrate(have ? [80, 70, 80] : 60); } catch (e) {}
   if (remember) addRecent(hit.fig.c[0]);
 }
 function showMsg(title, text, bad, raw) {
+  current = null;
+  $('stage').classList.remove('own', 'need');
   const d = el('div', 'msg pop' + (bad ? ' bad' : ''));
   d.append(el('h2', '', title), el('p', '', text));
   if (raw) d.append(el('div', 'code', raw));
@@ -341,18 +392,30 @@ function addRecent(c) {
 drawRecent();
 
 // ---- series catalogue, images created only when a series is opened
-$('series').replaceChildren(...SERIES.map(s => {
-  const d = el('details'), sum = el('summary');
-  sum.append(el('span', '', s.s), el('small', '', s.set + ' · ' + s.y));
+$('series').replaceChildren(...SERIES.map((s, si) => {
+  const d = el('details'), sum = el('summary'), cnt = el('small');
+  cnt.dataset.series = si;
+  sum.append(el('span', '', s.s), cnt);
   d.append(sum);
   d.addEventListener('toggle', () => {
     if (!d.open || d.querySelector('.grid')) return;
     const g = el('div', 'grid');
-    s.f.forEach(f => { const fig = el('figure'), img = el('img'); img.src = src(f); img.alt = f.n; img.loading = 'lazy'; fig.append(img, el('figcaption', '', f.n)); g.append(fig); });
-    d.append(g);
+    s.f.forEach(f => {
+      const fig = el('figure'), img = el('img');
+      fig.dataset.key = keyOf(f);
+      fig.classList.toggle('have', owned.has(keyOf(f)));
+      fig.setAttribute('role', 'button');
+      fig.tabIndex = 0;
+      img.src = src(f); img.alt = f.n; img.loading = 'lazy';
+      fig.append(img, el('figcaption', '', f.n));
+      fig.addEventListener('click', () => toggleOwned(f));
+      g.append(fig);
+    });
+    d.append(el('p', 'gridhint', 'Figur antippen: in die Sammlung aufnehmen oder entfernen.'), g);
   });
   return d;
 }));
+updateCount();
 </script>
 
 </body>

@@ -11,6 +11,7 @@ import android.os.SystemClock;
 import android.util.Size;
 import android.view.Gravity;
 import android.view.WindowManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.FrameLayout;
@@ -128,7 +129,7 @@ public class MainActivity extends ComponentActivity {
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
-        web.addJavascriptInterface(new Object(), "Android");
+        web.addJavascriptInterface(new CollectionStore(), "Android");
         root.addView(web, new LinearLayout.LayoutParams(-1, 0, 6f));
 
         setContentView(root);
@@ -263,6 +264,23 @@ public class MainActivity extends ComponentActivity {
         bg.setStroke((int) (2 * dp), Color.parseColor("#FFD21F"));
         b.setBackground(bg);
         b.setTextColor(active ? Color.parseColor("#1A1600") : Color.WHITE);
+    }
+
+    /** Keeps the collection (a JSON list of figure keys) in the app's own storage. */
+    private class CollectionStore {
+        private android.content.SharedPreferences prefs() {
+            return getSharedPreferences("collection", MODE_PRIVATE);
+        }
+
+        @JavascriptInterface
+        public String loadCollection() {
+            return prefs().getString("owned", "[]");
+        }
+
+        @JavascriptInterface
+        public void saveCollection(String json) {
+            prefs().edit().putString("owned", json).apply();
+        }
     }
 
     @Override

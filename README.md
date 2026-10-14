@@ -17,6 +17,10 @@ Bei jedem Push baut GitHub Actions eine APK und legt sie unter **Releases → la
 
 Am Handy herunterladen, öffnen und die Installation aus dieser Quelle einmal erlauben. Die APK ist mit dem Test-Schlüssel `app/debug.keystore` signiert und nicht für den Play Store gedacht. In der App läuft die Kamera dauerhaft im oberen Teil; jede neue Schachtel im Rahmen wechselt das angezeigte Ergebnis. Die Tasten am rechten Rand des Kamerabilds schalten die Taschenlampe und wechseln zwischen Haupt- und Selfiekamera.
 
+## Sammlung
+
+In der Liste der Serien eine Figur antippen, um sie in die Sammlung aufzunehmen. Beim Scannen ist das Ergebnis rot umrahmt, wenn die Figur schon in der Sammlung ist, und grün, wenn sie noch fehlt. Die Sammlung bleibt bei App-Updates erhalten, geht beim Deinstallieren aber verloren.
+
 ## Quellen
 
 Code-Listen und Figurenbilder stammen aus [L-Scan](https://github.com/le0pard/lego-scanner) (MIT-Lizenz, siehe `THIRD_PARTY_LICENSE_L-Scan.txt`). Die Codes kommen aus der Sammler-Community und sind nicht von LEGO bestätigt. Inoffizielles Werkzeug ohne Verbindung zur LEGO Gruppe.
