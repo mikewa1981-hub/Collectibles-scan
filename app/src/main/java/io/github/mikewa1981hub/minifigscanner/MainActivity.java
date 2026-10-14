@@ -60,6 +60,9 @@ public class MainActivity extends ComponentActivity {
     private TextView status;
     private Camera camera;
     private boolean torchOn = false;
+    private boolean useFront = false;
+    private TextView torchBtn;
+    private TextView flipBtn;
     private BarcodeScanner scanner;
     private final ExecutorService analysisExecutor = Executors.newSingleThreadExecutor();
 
@@ -97,12 +100,26 @@ public class MainActivity extends ComponentActivity {
         status.setTextColor(Color.WHITE);
         status.setTextSize(13);
         status.setShadowLayer(4, 0, 0, Color.BLACK);
-        status.setText("Code in den Rahmen halten · Tippen = Licht");
+        status.setText("Code in den Rahmen halten");
         FrameLayout.LayoutParams sp = new FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
         sp.bottomMargin = (int) (8 * dp);
         camBox.addView(status, sp);
 
-        camBox.setOnClickListener(v -> toggleTorch());
+        // --- buttons along the right edge of the camera image
+        LinearLayout buttons = new LinearLayout(this);
+        buttons.setOrientation(LinearLayout.VERTICAL);
+        torchBtn = makeButton("Licht", dp);
+        torchBtn.setOnClickListener(v -> toggleTorch());
+        flipBtn = makeButton("Selfie", dp);
+        flipBtn.setOnClickListener(v -> switchCamera());
+        LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams((int) (64 * dp), (int) (64 * dp));
+        buttons.addView(torchBtn, bp);
+        LinearLayout.LayoutParams bp2 = new LinearLayout.LayoutParams((int) (64 * dp), (int) (64 * dp));
+        bp2.topMargin = (int) (12 * dp);
+        buttons.addView(flipBtn, bp2);
+        FrameLayout.LayoutParams blp = new FrameLayout.LayoutParams(-2, -2, Gravity.END | Gravity.CENTER_VERTICAL);
+        blp.rightMargin = (int) (10 * dp);
+        camBox.addView(buttons, blp);
         root.addView(camBox, new LinearLayout.LayoutParams(-1, 0, 4f));
 
         // --- result page
@@ -158,7 +175,14 @@ public class MainActivity extends ComponentActivity {
                 analysis.setAnalyzer(analysisExecutor, this::analyze);
 
                 provider.unbindAll();
-                camera = provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, p, analysis);
+                CameraSelector selector = useFront ? CameraSelector.DEFAULT_FRONT_CAMERA : CameraSelector.DEFAULT_BACK_CAMERA;
+                if (!provider.hasCamera(selector)) {
+                    useFront = !useFront;
+                    selector = useFront ? CameraSelector.DEFAULT_FRONT_CAMERA : CameraSelector.DEFAULT_BACK_CAMERA;
+                }
+                camera = provider.bindToLifecycle(this, selector, p, analysis);
+                torchOn = false;
+                updateButtons();
 
                 // The codes are tiny: a little zoom lets the phone stay far enough away to focus.
                 ZoomState z = camera.getCameraInfo().getZoomState().getValue();
@@ -201,6 +225,44 @@ public class MainActivity extends ComponentActivity {
         if (camera == null || !camera.getCameraInfo().hasFlashUnit()) return;
         torchOn = !torchOn;
         camera.getCameraControl().enableTorch(torchOn);
+        updateButtons();
+    }
+
+    private void switchCamera() {
+        if (camera == null) return;
+        useFront = !useFront;
+        startCamera();
+    }
+
+    private void updateButtons() {
+        boolean hasFlash = camera != null && camera.getCameraInfo().hasFlashUnit();
+        torchBtn.setEnabled(hasFlash);
+        torchBtn.setAlpha(hasFlash ? 1f : 0.35f);
+        torchBtn.setText(torchOn ? "Licht\naus" : "Licht");
+        styleButton(torchBtn, torchOn);
+        flipBtn.setText(useFront ? "Haupt-\nkamera" : "Selfie");
+    }
+
+    private TextView makeButton(String label, float dp) {
+        TextView b = new TextView(this);
+        b.setText(label);
+        b.setTextSize(12);
+        b.setGravity(Gravity.CENTER);
+        b.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        b.setClickable(true);
+        b.setFocusable(true);
+        b.setTag(dp);
+        styleButton(b, false);
+        return b;
+    }
+
+    private void styleButton(TextView b, boolean active) {
+        GradientDrawable bg = new GradientDrawable();
+        bg.setShape(GradientDrawable.OVAL);
+        bg.setColor(active ? Color.parseColor("#FFD21F") : Color.parseColor("#99000000"));
+        bg.setStroke((int) (2 * (float) b.getTag()), Color.parseColor("#FFD21F"));
+        b.setBackground(bg);
+        b.setTextColor(active ? Color.parseColor("#1A1600") : Color.WHITE);
     }
 
     @Override

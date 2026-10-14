@@ -15,7 +15,7 @@ Scannt den Data-Matrix-Code auf der Unterseite von LEGO-Minifiguren-Schachteln (
 Bei jedem Push baut GitHub Actions eine APK und legt sie unter **Releases → latest** ab:
 <https://github.com/mikewa1981-hub/Collectibles-scan/releases/latest/download/MinifigScanner.apk>
 
-Am Handy herunterladen, öffnen und die Installation aus dieser Quelle einmal erlauben. Die APK ist mit dem Test-Schlüssel `app/debug.keystore` signiert und nicht für den Play Store gedacht. In der App läuft die Kamera dauerhaft im oberen Teil; jede neue Schachtel im Rahmen wechselt das angezeigte Ergebnis. Tippen aufs Kamerabild schaltet die Taschenlampe.
+Am Handy herunterladen, öffnen und die Installation aus dieser Quelle einmal erlauben. Die APK ist mit dem Test-Schlüssel `app/debug.keystore` signiert und nicht für den Play Store gedacht. In der App läuft die Kamera dauerhaft im oberen Teil; jede neue Schachtel im Rahmen wechselt das angezeigte Ergebnis. Die Tasten am rechten Rand des Kamerabilds schalten die Taschenlampe und wechseln zwischen Haupt- und Selfiekamera.
 
 ## Quellen
 
