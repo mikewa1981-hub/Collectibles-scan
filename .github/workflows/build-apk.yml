@@ -12,9 +12,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
@@ -39,11 +39,6 @@ jobs:
 
       - name: Rename APK
         run: cp app/build/outputs/apk/debug/app-debug.apk MinifigScanner.apk
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: MinifigScanner
-          path: MinifigScanner.apk
 
       - name: Publish as the latest release
         env:

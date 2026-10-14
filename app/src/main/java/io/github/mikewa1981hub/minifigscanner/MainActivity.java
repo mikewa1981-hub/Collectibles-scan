@@ -61,6 +61,7 @@ public class MainActivity extends ComponentActivity {
     private Camera camera;
     private boolean torchOn = false;
     private boolean useFront = false;
+    private float dp;
     private TextView torchBtn;
     private TextView flipBtn;
     private BarcodeScanner scanner;
@@ -69,13 +70,13 @@ public class MainActivity extends ComponentActivity {
     private String lastCode = "";
     private long lastSeenAt = 0;
 
-    @SuppressLint({"SetJavaScriptEnabled", "ClickableViewAccessibility"})
+    @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        float dp = getResources().getDisplayMetrics().density;
+        dp = getResources().getDisplayMetrics().density;
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -108,9 +109,9 @@ public class MainActivity extends ComponentActivity {
         // --- buttons along the right edge of the camera image
         LinearLayout buttons = new LinearLayout(this);
         buttons.setOrientation(LinearLayout.VERTICAL);
-        torchBtn = makeButton("Licht", dp);
+        torchBtn = makeButton("Licht");
         torchBtn.setOnClickListener(v -> toggleTorch());
-        flipBtn = makeButton("Selfie", dp);
+        flipBtn = makeButton("Selfie");
         flipBtn.setOnClickListener(v -> switchCamera());
         LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams((int) (64 * dp), (int) (64 * dp));
         buttons.addView(torchBtn, bp);
@@ -243,7 +244,7 @@ public class MainActivity extends ComponentActivity {
         flipBtn.setText(useFront ? "Haupt-\nkamera" : "Selfie");
     }
 
-    private TextView makeButton(String label, float dp) {
+    private TextView makeButton(String label) {
         TextView b = new TextView(this);
         b.setText(label);
         b.setTextSize(12);
@@ -251,7 +252,6 @@ public class MainActivity extends ComponentActivity {
         b.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         b.setClickable(true);
         b.setFocusable(true);
-        b.setTag(dp);
         styleButton(b, false);
         return b;
     }
@@ -260,7 +260,7 @@ public class MainActivity extends ComponentActivity {
         GradientDrawable bg = new GradientDrawable();
         bg.setShape(GradientDrawable.OVAL);
         bg.setColor(active ? Color.parseColor("#FFD21F") : Color.parseColor("#99000000"));
-        bg.setStroke((int) (2 * (float) b.getTag()), Color.parseColor("#FFD21F"));
+        bg.setStroke((int) (2 * dp), Color.parseColor("#FFD21F"));
         b.setBackground(bg);
         b.setTextColor(active ? Color.parseColor("#1A1600") : Color.WHITE);
     }
@@ -268,7 +268,7 @@ public class MainActivity extends ComponentActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        analysisExecutor.shutdown();
+        analysisExecutor.shutdownNow();
         scanner.close();
     }
 }
